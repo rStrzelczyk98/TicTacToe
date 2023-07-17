@@ -1,0 +1,17 @@
+<div class="d-flex justify-content-between mt-4">
+  <div
+    class="player position-relative p-2 bg-primary-subtle text-center text-primary rounded-end border border-2 border-primary border-start-0">
+    <i class="bi bi-circle"></i>
+    <p class="m-0 fw-bold">01</p>
+    <app-winner [winner]="'circle'" *ngIf="(winner$ | async) === 'circle'"></app-winner>
+  </div>
+  <p class="m-0 fw-bold text-center text-uppercase text-secondary align-self-center">round<span class="d-block">{{round$
+      | async}}</span>
+  </p>
+  <div
+    class="player position-relative p-2 bg-danger-subtle text-center text-danger rounded-start border border-2 border-danger border-end-0">
+    <i class="bi bi-x-lg"></i>
+    <p class="m-0 fw-bold">00</p>
+    <app-winner [winner]="'cross'" *ngIf="(winner$ | async) === 'cross'"></app-winner>
+  </div>
+</div>
