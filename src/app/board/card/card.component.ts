@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { Observable, Subscription, first, tap } from 'rxjs';
+import { Observable, first, map } from 'rxjs';
 import { GameControlService } from 'src/app/service/game-control.service';
 
 @Component({
@@ -9,20 +9,15 @@ import { GameControlService } from 'src/app/service/game-control.service';
 })
 export class CardComponent {
   @Input() value!: number;
-  selected: string = '';
-  currentPlayer$: Observable<string>;
-
-  constructor(private gameControl: GameControlService) {
-    this.currentPlayer$ = this.gameControl.getCurrentPlayer();
-  }
+  selected!: Observable<string>;
+  constructor(private gameControl: GameControlService) {}
 
   onClick() {
     if (this.selected) return;
-    this.gameControl.updatePlayerMoves(this.value);
-    this.gameControl
-      .getCurrentPlayer()
-      .pipe(first())
-      .subscribe((data) => (this.selected = data));
-    this.gameControl.switchPlayer();
+    this.selected = this.gameControl.getCurrentPlayer().pipe(
+      map((arr) => (arr.length % 2 ? 'circle' : 'cross')),
+      first()
+    );
+    this.gameControl.updateMoves(this.value);
   }
 }
