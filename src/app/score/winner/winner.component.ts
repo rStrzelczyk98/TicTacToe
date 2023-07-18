@@ -6,5 +6,5 @@ import { Component, Input } from '@angular/core';
   styleUrls: ['./winner.component.scss'],
 })
 export class WinnerComponent {
-  @Input() winner!: string;
+  @Input() player!: string;
 }
