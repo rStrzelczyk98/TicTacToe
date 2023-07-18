@@ -1,0 +1,8 @@
+.d-flex {
+  max-width: 40rem;
+  gap: 1rem;
+  .card {
+    flex-basis: 25%;
+    aspect-ratio: 1/1;
+  }
+}
