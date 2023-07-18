@@ -1,0 +1,10 @@
+.d-flex {
+  max-width: 20rem;
+  gap: 1rem;
+}
+.btn:hover {
+  filter: brightness(1.05);
+}
+.btn:active {
+  filter: brightness(0.95);
+}
