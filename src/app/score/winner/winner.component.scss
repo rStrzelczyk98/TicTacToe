@@ -1,0 +1,21 @@
+.winner {
+  width: min-content;
+  i {
+    font-size: 1rem;
+    line-height: 1rem;
+  }
+  box-shadow: 0 0 1.5rem #ffc107a8;
+}
+
+.circle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%) rotate(20deg);
+}
+.cross {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%) rotate(-20deg);
+}
