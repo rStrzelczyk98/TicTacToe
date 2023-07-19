@@ -1,30 +1,26 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type Players = {
-  [key: string]: number;
-};
-
 @Injectable({
   providedIn: 'root',
 })
 export class GameControlService {
-  private board: BehaviorSubject<number[]> = new BehaviorSubject<number[]>(
+  private gameBoard: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(
     new Array(9)
   );
-  private moves: BehaviorSubject<number[]> = new BehaviorSubject<number[]>([]);
-
-  getBoard() {
-    return this.board.asObservable();
-  }
 
   constructor() {}
 
-  updateMoves(value: number) {
-    this.moves.value.push(value);
+  getGameBoard() {
+    return this.gameBoard.asObservable();
   }
 
-  getCurrentPlayer() {
-    return this.moves.asObservable();
+  updateGameBoard(index: number) {
+    const player = !(this.gameBoard.value.filter((el) => el).length % 2)
+      ? 'cross'
+      : 'circle';
+    const arr = [...this.gameBoard.value];
+    arr[index] = player;
+    this.gameBoard.next(arr);
   }
 }

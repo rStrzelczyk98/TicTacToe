@@ -1,21 +1,12 @@
 .card {
   width: 100%;
   aspect-ratio: 1/1;
+  transition: transform 250ms ease-in;
   i {
     font-size: 3rem;
     line-height: 3rem;
   }
 }
-
-.flip {
-  animation: flip 500ms ease;
-}
-
-@keyframes flip {
-  from {
-    transform: rotateY(0) scale(0.5);
-  }
-  to {
-    transform: rotateY(180deg);
-  }
+.card:hover {
+  cursor: pointer;
 }

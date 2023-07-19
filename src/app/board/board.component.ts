@@ -8,9 +8,9 @@ import { GameControlService } from '../service/game-control.service';
   styleUrls: ['./board.component.scss'],
 })
 export class BoardComponent {
-  boardFields$: Observable<number[]>;
+  gameBoard$: Observable<string[]>;
 
   constructor(private gameControl: GameControlService) {
-    this.boardFields$ = this.gameControl.getBoard();
+    this.gameBoard$ = this.gameControl.getGameBoard();
   }
 }

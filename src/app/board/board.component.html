@@ -1,3 +1,4 @@
 <div class="d-flex flex-wrap justify-content-center mt-4 mx-auto">
-  <app-card class="card" *ngFor="let field of boardFields$ | async; let i = index" [value]="i + 1"></app-card>
+  <app-card class="card" *ngFor="let field of gameBoard$ | async; let i = index" [index]="i"
+    [selected]="field ?? ''"></app-card>
 </div>
