@@ -1,4 +1,4 @@
-<div class="flip card justify-content-center align-items-center bg-secondary" (click)="onClick()">
+<div class="flip card justify-content-center align-items-center bg-secondary-subtle" (click)="onClick()">
   <i *ngIf="selected | async" class="bi"
     [ngClass]="(selected | async) === 'circle' ? 'bi-circle text-primary' : 'bi-x-lg text-danger' "></i>
 </div>
