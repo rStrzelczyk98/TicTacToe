@@ -1,17 +1,34 @@
-<div class="d-flex justify-content-between mt-4">
+<div class="d-flex flex-wrap justify-content-between mt-4" *ngIf="gameStatus$ | async as gameStatus">
   <div
     class="player position-relative p-2 bg-primary-subtle text-center text-primary rounded-end border border-2 border-primary border-start-0">
     <i class="bi bi-circle"></i>
-    <p class="m-0 fw-bold">01</p>
-    <app-winner [player]="'circle'" *ngIf="(winner$ | async) === 'circle'"></app-winner>
+    <p class="m-0 fw-bold">{{gameStatus.circle}}</p>
+    <app-winner [player]="'circle'" *ngIf="gameStatus.winner === 'circle'"></app-winner>
   </div>
-  <p class="m-0 fw-bold text-center text-uppercase text-secondary align-self-center">round<span class="d-block">{{round$
-      | async}}</span>
+  <p class="m-0 fw-bold text-center text-uppercase text-secondary align-self-center">round<span
+      class="d-block">{{gameStatus.round}}</span>
   </p>
   <div
     class="player position-relative p-2 bg-danger-subtle text-center text-danger rounded-start border border-2 border-danger border-end-0">
     <i class="bi bi-x-lg"></i>
-    <p class="m-0 fw-bold">00</p>
-    <app-winner [player]="'cross'" *ngIf="(winner$ | async) === 'cross'"></app-winner>
+    <p class="m-0 fw-bold">{{gameStatus.cross}}</p>
+    <app-winner [player]="'cross'" *ngIf="gameStatus.winner === 'cross'"></app-winner>
   </div>
+
+  <p *ngIf="gameStatus.active;else winnerCard"
+    class="w-100 m-0 mt-4 fw-bold text-center text-uppercase text-secondary d-flex justify-content-center  align-items-center">
+    Next move
+    <i class="bi" [ngClass]="gameStatus.player === 'circle' ? 'bi-circle text-primary' : 'bi-x-lg text-danger' "></i>
+  </p>
+  <ng-template #winnerCard>
+    <p *ngIf="gameStatus.winner;else draw"
+      class="w-100 m-0 mt-4 fw-bold text-center text-uppercase text-secondary d-flex justify-content-center  align-items-center">
+      Player
+      <i class="bi" [ngClass]="gameStatus.winner === 'circle' ? 'bi-circle text-primary' : 'bi-x-lg text-danger' "></i>
+      Wins!
+    </p>
+    <ng-template #draw>
+      <p class="w-100 m-0 mt-4 fw-bold text-center text-uppercase text-secondary align-self-center">draw</p>
+    </ng-template>
+  </ng-template>
 </div>
