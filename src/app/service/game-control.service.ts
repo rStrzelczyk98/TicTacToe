@@ -1,11 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-  BehaviorSubject,
-  Observable,
-  combineLatest,
-  map,
-  shareReplay,
-} from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
 
 export type Score = {
   [key: string]: number;
@@ -46,6 +40,8 @@ export class GameControlService {
   private gameActive: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
     true
   );
+  private startWithCross: BehaviorSubject<boolean> =
+    new BehaviorSubject<boolean>(true);
 
   constructor() {}
 
@@ -59,13 +55,7 @@ export class GameControlService {
       this.getScore('circle'),
       this.getScore('cross'),
       this.round.asObservable(),
-      this.gameBoard
-        .asObservable()
-        .pipe(
-          map((field) =>
-            !(field.filter((value) => value).length % 2) ? 'cross' : 'circle'
-          )
-        ),
+      this.gameBoard.asObservable().pipe(map(() => this.getPlayer())),
       this.getGameStatus(),
     ]).pipe(
       map(([winner, circle, cross, round, player, active]) => ({
@@ -81,14 +71,20 @@ export class GameControlService {
 
   updateGameBoard(index: number) {
     if (!this.gameActive.value) return;
-    const player = this.getCurrentPlayer();
     const arr = [...this.gameBoard.value];
-    arr[index] = player;
+    arr[index] = this.getPlayer();
     this.gameBoard.next(arr);
     this.findPattern();
   }
 
-  findPattern() {
+  reload() {
+    this.startWithCross.next(!this.startWithCross.value);
+    this.gameBoard.next(new Array(9));
+    this.gameActive.next(true);
+    this.updateRound();
+  }
+
+  private findPattern() {
     this.patterns.find((pattern) => {
       if (pattern.every((value) => this.filterPlayer('circle').includes(value)))
         this.updateScore('circle');
@@ -101,23 +97,17 @@ export class GameControlService {
     });
   }
 
-  reload() {
-    this.gameBoard.next(new Array(9));
-    this.gameActive.next(true);
-    this.updateRound();
-  }
-
-  getCurrentPlayer(): string {
+  private togglePlayer(val_1: string, val_2: string): string {
     return !(this.gameBoard.value.filter((el) => el).length % 2)
-      ? 'cross'
-      : 'circle';
+      ? val_1
+      : val_2;
   }
 
-  private getGameStatus() {
+  private getGameStatus(): Observable<boolean> {
     return this.gameActive.asObservable();
   }
 
-  private getScore(player: string) {
+  private getScore(player: string): Observable<number> {
     return this.score.asObservable().pipe(map((score) => score[player]));
   }
 
@@ -144,5 +134,11 @@ export class GameControlService {
   private updateRound() {
     let round = this.round.value;
     this.round.next(++round);
+  }
+
+  getPlayer(): string {
+    return this.startWithCross.value
+      ? this.togglePlayer('cross', 'circle')
+      : this.togglePlayer('circle', 'cross');
   }
 }
