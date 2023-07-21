@@ -14,7 +14,7 @@ export class CardComponent {
 
   onClick() {
     if (this.selected$) return;
-    this.gameControl.updateGameBoard(this.index);
-    this.selected$ = this.gameControl.getPlayerMove(this.index);
+    this.gameControl.updateMoves(this.index);
+    this.selected$ = this.gameControl.getSingleMove(this.index);
   }
 }
