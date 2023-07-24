@@ -37,6 +37,7 @@ export type Status = {
   providedIn: 'root',
 })
 export class GameControlService {
+  private startWithCross: boolean = true;
   private patterns: number[][] = [
     [1, 2, 3],
     [4, 5, 6],
@@ -48,27 +49,23 @@ export class GameControlService {
     [3, 5, 7],
   ];
 
+  private gameBoard: BehaviorSubject<number[]> = new BehaviorSubject<number[]>(
+    new Array(9)
+  );
+  private games$$: BehaviorSubject<gameStream> =
+    new BehaviorSubject<gameStream>(new ReplaySubject<move>());
+
   private score: BehaviorSubject<Score> = new BehaviorSubject<Score>({
     cross: 0,
     circle: 0,
   });
+  private activePlayer: BehaviorSubject<string> = new BehaviorSubject<string>(
+    this.togglePlayer()
+  );
   private winner: BehaviorSubject<string> = new BehaviorSubject<string>('');
   private round: BehaviorSubject<number> = new BehaviorSubject<number>(1);
   private gameActive: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
     true
-  );
-
-  private startWithCross: boolean = true;
-
-  private gameBoard: BehaviorSubject<number[]> = new BehaviorSubject<number[]>(
-    new Array(9)
-  );
-
-  private games$$: BehaviorSubject<gameStream> =
-    new BehaviorSubject<gameStream>(new ReplaySubject<move>());
-
-  private activePlayer: BehaviorSubject<string> = new BehaviorSubject<string>(
-    this.togglePlayer()
   );
 
   constructor() {}
@@ -95,6 +92,47 @@ export class GameControlService {
         active,
       }))
     );
+  }
+
+  getAllMoves() {
+    return this.games$$.pipe(
+      switchMap((game$) =>
+        game$.pipe(
+          scan((acc: move[], curr: move) => (curr ? [...acc, curr] : []), [])
+        )
+      ),
+      shareReplay(1)
+    );
+  }
+
+  getSingleMove(field: number) {
+    return this.getAllMoves().pipe(
+      filter((moves) => moves.some((move) => move.field === field)),
+      withLatestFrom(this.gameActive),
+      tap(([moves, active]) => {
+        if (active) this.findWinner(moves);
+      }),
+      map(([moves, _]) => moves.find((move) => move.field === field)!.player)
+    );
+  }
+
+  updateMoves(field: number) {
+    this.games$$
+      .pipe(
+        withLatestFrom(this.activePlayer),
+        withLatestFrom(this.gameActive),
+        filter(([[_], active]) => active),
+        tap(([[game$, player], _]) => {
+          game$.next({ field, player });
+        }),
+        tap(() =>
+          this.activePlayer.next(
+            this.activePlayer.value === 'cross' ? 'circle' : 'cross'
+          )
+        ),
+        take(1)
+      )
+      .subscribe();
   }
 
   reload() {
@@ -151,49 +189,6 @@ export class GameControlService {
 
   private togglePlayer(): string {
     return this.startWithCross ? 'cross' : 'circle';
-  }
-
-  getAllMoves() {
-    return this.games$$.pipe(
-      switchMap((game$) =>
-        game$.pipe(
-          scan((acc: move[], curr: move) => (curr ? [...acc, curr] : []), [])
-        )
-      ),
-      shareReplay(1)
-    );
-  }
-
-  getSingleMove(field: number) {
-    return this.getAllMoves().pipe(
-      filter((moves) => moves.some((move) => move.field === field)),
-      withLatestFrom(this.gameActive),
-      tap(([moves, active]) => {
-        if (active) this.findWinner(moves);
-      }),
-      map(
-        ([moves, _]) => moves.find((move) => move.field === field)?.player ?? ''
-      )
-    );
-  }
-
-  updateMoves(field: number) {
-    this.games$$
-      .pipe(
-        withLatestFrom(this.activePlayer),
-        withLatestFrom(this.gameActive),
-        filter(([[_], active]) => active),
-        tap(([[game$, player], _]) => {
-          game$.next({ field, player });
-        }),
-        tap(() =>
-          this.activePlayer.next(
-            this.activePlayer.value === 'cross' ? 'circle' : 'cross'
-          )
-        ),
-        take(1)
-      )
-      .subscribe();
   }
 
   private checkPattern(moves: move[], player: string) {
