@@ -1,9 +1,29 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, map } from 'rxjs';
+import {
+  BehaviorSubject,
+  Observable,
+  ReplaySubject,
+  combineLatest,
+  filter,
+  map,
+  scan,
+  shareReplay,
+  switchMap,
+  take,
+  tap,
+  withLatestFrom,
+} from 'rxjs';
 
 export type Score = {
   [key: string]: number;
 };
+
+export type move = {
+  field: number;
+  player: string;
+};
+
+export type gameStream = ReplaySubject<move>;
 
 export type Status = {
   winner: string;
@@ -28,9 +48,6 @@ export class GameControlService {
     [3, 5, 7],
   ];
 
-  private gameBoard: BehaviorSubject<string[]> = new BehaviorSubject<string[]>(
-    new Array(9)
-  );
   private score: BehaviorSubject<Score> = new BehaviorSubject<Score>({
     cross: 0,
     circle: 0,
@@ -40,8 +57,19 @@ export class GameControlService {
   private gameActive: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
     true
   );
-  private startWithCross: BehaviorSubject<boolean> =
-    new BehaviorSubject<boolean>(true);
+
+  private startWithCross: boolean = true;
+
+  private gameBoard: BehaviorSubject<number[]> = new BehaviorSubject<number[]>(
+    new Array(9)
+  );
+
+  private games$$: BehaviorSubject<gameStream> =
+    new BehaviorSubject<gameStream>(new ReplaySubject<move>());
+
+  private activePlayer: BehaviorSubject<string> = new BehaviorSubject<string>(
+    this.togglePlayer()
+  );
 
   constructor() {}
 
@@ -55,7 +83,7 @@ export class GameControlService {
       this.getScore('circle'),
       this.getScore('cross'),
       this.round.asObservable(),
-      this.gameBoard.asObservable().pipe(map(() => this.getPlayer())),
+      this.activePlayer.asObservable(),
       this.getGameStatus(),
     ]).pipe(
       map(([winner, circle, cross, round, player, active]) => ({
@@ -69,38 +97,23 @@ export class GameControlService {
     );
   }
 
-  updateGameBoard(index: number) {
-    if (!this.gameActive.value) return;
-    const arr = [...this.gameBoard.value];
-    arr[index] = this.getPlayer();
-    this.gameBoard.next(arr);
-    this.findPattern();
-  }
-
   reload() {
-    this.startWithCross.next(!this.startWithCross.value);
-    this.gameBoard.next(new Array(9));
     this.gameActive.next(true);
     this.updateRound();
+    this.startWithCross = !this.startWithCross;
+    this.activePlayer.next(this.togglePlayer());
+    this.gameBoard.next(new Array(9).fill(Math.random(), 0, 9));
+    this.games$$.next(new ReplaySubject<move>());
   }
 
-  private findPattern() {
-    this.patterns.find((pattern) => {
-      if (pattern.every((value) => this.filterPlayer('circle').includes(value)))
-        this.updateScore('circle');
-      else if (
-        pattern.every((value) => this.filterPlayer('cross').includes(value))
-      )
-        this.updateScore('cross');
-      else if (this.gameBoard.value.every((el) => el) && this.gameActive.value)
-        this.updateScore('');
-    });
-  }
-
-  private togglePlayer(val_1: string, val_2: string): string {
-    return !(this.gameBoard.value.filter((el) => el).length % 2)
-      ? val_1
-      : val_2;
+  private findWinner(moves: move[]) {
+    if (this.checkPattern(moves, 'circle')) {
+      this.updateScore('circle');
+    } else if (this.checkPattern(moves, 'cross')) {
+      this.updateScore('cross');
+    } else if (moves.length === 9) {
+      this.updateScore('');
+    }
   }
 
   private getGameStatus(): Observable<boolean> {
@@ -115,10 +128,10 @@ export class GameControlService {
     return this.winner.asObservable();
   }
 
-  private filterPlayer(value: string) {
-    return this.gameBoard.value
-      .map((player, index) => (player === value ? index + 1 : null))
-      .filter((el) => el !== null);
+  private filterPlayer(value: string, moves: move[]) {
+    return moves
+      .map(({ field, player }) => (player === value ? field + 1 : null))
+      .filter((el) => el);
   }
 
   private updateScore(player: string) {
@@ -136,9 +149,58 @@ export class GameControlService {
     this.round.next(++round);
   }
 
-  getPlayer(): string {
-    return this.startWithCross.value
-      ? this.togglePlayer('cross', 'circle')
-      : this.togglePlayer('circle', 'cross');
+  private togglePlayer(): string {
+    return this.startWithCross ? 'cross' : 'circle';
+  }
+
+  getAllMoves() {
+    return this.games$$.pipe(
+      switchMap((game$) =>
+        game$.pipe(
+          scan((acc: move[], curr: move) => (curr ? [...acc, curr] : []), [])
+        )
+      ),
+      shareReplay(1)
+    );
+  }
+
+  getSingleMove(field: number) {
+    return this.getAllMoves().pipe(
+      filter((moves) => moves.some((move) => move.field === field)),
+      withLatestFrom(this.gameActive),
+      tap(([moves, active]) => {
+        if (active) this.findWinner(moves);
+      }),
+      map(
+        ([moves, _]) => moves.find((move) => move.field === field)?.player ?? ''
+      )
+    );
+  }
+
+  updateMoves(field: number) {
+    this.games$$
+      .pipe(
+        withLatestFrom(this.activePlayer),
+        withLatestFrom(this.gameActive),
+        filter(([[_], active]) => active),
+        tap(([[game$, player], _]) => {
+          game$.next({ field, player });
+        }),
+        tap(() =>
+          this.activePlayer.next(
+            this.activePlayer.value === 'cross' ? 'circle' : 'cross'
+          )
+        ),
+        take(1)
+      )
+      .subscribe();
+  }
+
+  private checkPattern(moves: move[], player: string) {
+    return this.patterns.some((pattern) =>
+      pattern.every((number) =>
+        this.filterPlayer(player, moves).includes(number)
+      )
+    );
   }
 }
