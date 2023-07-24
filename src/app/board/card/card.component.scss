@@ -1,0 +1,12 @@
+.card {
+  width: 100%;
+  aspect-ratio: 1/1;
+  transition: transform 250ms ease-in;
+  i {
+    font-size: 3rem;
+    line-height: 3rem;
+  }
+}
+.card:hover {
+  cursor: pointer;
+}

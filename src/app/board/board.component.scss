@@ -1,0 +1,13 @@
+.board {
+  max-width: 40rem;
+  display: grid;
+  place-items: center;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  .card {
+    border: none;
+    background-color: transparent;
+    min-width: 100%;
+    aspect-ratio: 1/1;
+  }
+}
