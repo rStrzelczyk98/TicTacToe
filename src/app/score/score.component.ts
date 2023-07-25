@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
+import { GameControlService, Status } from '../service/game-control.service';
 
 @Component({
   selector: 'app-score',
@@ -7,6 +8,8 @@ import { Observable, of } from 'rxjs';
   styleUrls: ['./score.component.scss'],
 })
 export class ScoreComponent {
-  winner$: Observable<string> = of('circle');
-  round$: Observable<number> = of(1);
+  gameStatus$!: Observable<Status>;
+  constructor(private gameService: GameControlService) {
+    this.gameStatus$ = this.gameService.getGameStats();
+  }
 }

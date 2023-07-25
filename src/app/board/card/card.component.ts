@@ -9,12 +9,12 @@ import { GameControlService } from 'src/app/service/game-control.service';
 })
 export class CardComponent {
   @Input() index!: number;
-  selected$!: Observable<string>;
+  selected!: Observable<string>;
   constructor(private gameControl: GameControlService) {}
 
   onClick() {
-    if (this.selected$) return;
+    if (this.selected) return;
+    this.selected = this.gameControl.getSingleMove(this.index);
     this.gameControl.updateMoves(this.index);
-    this.selected$ = this.gameControl.getSingleMove(this.index);
   }
 }

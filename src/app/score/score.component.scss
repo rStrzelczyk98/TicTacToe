@@ -6,3 +6,11 @@ i {
   max-width: 15rem;
   flex-basis: 30%;
 }
+p {
+  gap: 1rem;
+  i {
+    font-size: inherit;
+    line-height: inherit;
+    transform: scale(2);
+  }
+}
