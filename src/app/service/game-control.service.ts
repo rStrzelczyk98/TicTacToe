@@ -110,9 +110,9 @@ export class GameControlService {
       filter((moves) => moves.some((move) => move.field === field)),
       withLatestFrom(this.gameActive),
       tap(([moves, active]) => {
-        if (active) this.findWinner(moves);
+        if (active) this.findWinner(moves, this.returnPlayer(moves, field));
       }),
-      map(([moves, _]) => moves.find((move) => move.field === field)!.player)
+      map(([moves, _]) => this.returnPlayer(moves, field))
     );
   }
 
@@ -144,11 +144,9 @@ export class GameControlService {
     this.games$$.next(new ReplaySubject<move>());
   }
 
-  private findWinner(moves: move[]) {
-    if (this.checkPattern(moves, 'circle')) {
-      this.updateScore('circle');
-    } else if (this.checkPattern(moves, 'cross')) {
-      this.updateScore('cross');
+  private findWinner(moves: move[], player: string) {
+    if (this.checkPattern(moves, player)) {
+      this.updateScore(player);
     } else if (moves.length === 9) {
       this.updateScore('');
     }
@@ -197,5 +195,9 @@ export class GameControlService {
         this.filterPlayer(player, moves).includes(number)
       )
     );
+  }
+
+  private returnPlayer(moves: move[], field: number) {
+    return moves.find((move) => move.field === field)!.player;
   }
 }
