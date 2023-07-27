@@ -148,7 +148,10 @@ export class GameControlService {
         )
         .subscribe();
     } else if (moves.filter((el) => !el).length === 0) {
-      updateDoc(doc(this.firestore, 'game', 'testGame'), { winner: '' });
+      updateDoc(doc(this.firestore, 'game', 'testGame'), {
+        winner: '',
+        active: false,
+      });
     }
   }
 
