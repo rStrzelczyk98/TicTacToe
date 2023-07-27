@@ -10,12 +10,15 @@ import { Observable, map } from 'rxjs';
 export class ButtonGroupComponent {
   gameStatus$!: Observable<boolean>;
   constructor(private gameService: GameControlService) {
-    this.gameStatus$ = this.gameService
-      .getGameStats()
-      .pipe(map((status) => status.active));
+    // this.gameStatus$ = this.gameService
+    //   .getGameStats()
+    //   .pipe(map((status) => status.active));
   }
 
   reset() {
     this.gameService.reload();
+  }
+  test() {
+    // this.gameService.updateFirestore();
   }
 }

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { Observable } from 'rxjs';
-import { GameControlService } from '../service/game-control.service';
+import { Observable, map } from 'rxjs';
+import { GameControlService, gameData } from '../service/game-control.service';
 
 @Component({
   selector: 'app-board',
@@ -8,9 +8,9 @@ import { GameControlService } from '../service/game-control.service';
   styleUrls: ['./board.component.scss'],
 })
 export class BoardComponent {
-  gameBoard$: Observable<number[]>;
+  gameBoard$: Observable<(string | null)[]>;
 
   constructor(private gameControl: GameControlService) {
-    this.gameBoard$ = this.gameControl.getGameBoard();
+    this.gameBoard$ = this.gameControl.getBoard();
   }
 }

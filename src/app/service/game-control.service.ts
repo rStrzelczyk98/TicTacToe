@@ -1,18 +1,13 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import {
-  BehaviorSubject,
-  Observable,
-  ReplaySubject,
-  combineLatest,
-  filter,
-  map,
-  scan,
-  shareReplay,
-  switchMap,
-  take,
-  tap,
-  withLatestFrom,
-} from 'rxjs';
+  Firestore,
+  collectionData,
+  collection,
+  setDoc,
+  doc,
+} from '@angular/fire/firestore';
+import { updateDoc } from 'firebase/firestore';
+import { Observable, map, take, tap } from 'rxjs';
 
 export type Score = {
   [key: string]: number;
@@ -23,8 +18,6 @@ export type move = {
   player: string;
 };
 
-export type gameStream = ReplaySubject<move>;
-
 export type Status = {
   winner: string;
   circle: number;
@@ -33,11 +26,23 @@ export type Status = {
   player: string;
   active: boolean;
 };
+
+export type gameData = {
+  board: (string | null)[];
+  player: string;
+  score: Score;
+  winner: string;
+  round: number;
+  active: boolean;
+};
 @Injectable({
   providedIn: 'root',
 })
 export class GameControlService {
-  private startWithCross: boolean = true;
+  private player!: string;
+  // private firestore: Firestore = inject(Firestore);
+  private gameData$!: Observable<gameData>;
+
   private patterns: number[][] = [
     [1, 2, 3],
     [4, 5, 6],
@@ -49,147 +54,76 @@ export class GameControlService {
     [3, 5, 7],
   ];
 
-  private gameBoard: BehaviorSubject<number[]> = new BehaviorSubject<number[]>(
-    new Array(9)
-  );
-  private games$$: BehaviorSubject<gameStream> =
-    new BehaviorSubject<gameStream>(new ReplaySubject<move>());
+  constructor(private firestore: Firestore) {}
 
-  private score: BehaviorSubject<Score> = new BehaviorSubject<Score>({
-    cross: 0,
-    circle: 0,
-  });
-  private activePlayer: BehaviorSubject<string> = new BehaviorSubject<string>(
-    this.togglePlayer()
-  );
-  private winner: BehaviorSubject<string> = new BehaviorSubject<string>('');
-  private round: BehaviorSubject<number> = new BehaviorSubject<number>(1);
-  private gameActive: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(
-    true
-  );
-
-  constructor() {}
-
-  getGameBoard() {
-    return this.gameBoard.asObservable();
+  getStats() {
+    return this.gameData$;
   }
 
-  getGameStats() {
-    return combineLatest([
-      this.getWinner(),
-      this.getScore('circle'),
-      this.getScore('cross'),
-      this.round.asObservable(),
-      this.activePlayer.asObservable(),
-      this.getGameStatus(),
-    ]).pipe(
-      map(([winner, circle, cross, round, player, active]) => ({
-        winner,
-        circle,
-        cross,
-        round,
-        player,
-        active,
-      }))
-    );
+  getBoard() {
+    return this.gameData$.pipe(map(({ board }) => board));
   }
 
-  getAllMoves() {
-    return this.games$$.pipe(
-      switchMap((game$) =>
-        game$.pipe(
-          scan((acc: move[], curr: move) => (curr ? [...acc, curr] : []), [])
-        )
-      ),
-      shareReplay(1)
-    );
+  createNewGame() {
+    this.player = 'cross';
+    setDoc(doc(this.firestore, 'game', 'testGame'), {
+      board: new Array(9).fill(null, 0, 9),
+      player: 'cross',
+      score: { cross: 0, circle: 0 },
+      winner: '',
+      round: 1,
+      active: true,
+    });
+    this.gameInitData();
   }
 
-  getSingleMove(field: number) {
-    return this.getAllMoves().pipe(
-      filter((moves) => moves.some((move) => move.field === field)),
-      withLatestFrom(this.gameActive),
-      tap(([moves, active]) => {
-        if (active) this.findWinner(moves, this.returnPlayer(moves, field));
-      }),
-      map(([moves, _]) => this.returnPlayer(moves, field))
-    );
+  joinNewGame() {
+    this.player = 'circle';
+    this.gameInitData();
   }
 
-  updateMoves(field: number) {
-    this.games$$
+  updateBoard(field: number) {
+    this.gameData$
       .pipe(
-        withLatestFrom(this.activePlayer),
-        withLatestFrom(this.gameActive),
-        filter(([[_], active]) => active),
-        tap(([[game$, player], _]) => {
-          game$.next({ field, player });
+        map(({ board, active, player }) => {
+          if (active && player === this.player) {
+            const arr = board;
+            arr[field] = player;
+            this.findWinner(arr, player);
+            updateDoc(doc(this.firestore, 'game', 'testGame'), {
+              board: arr,
+              player: player === 'cross' ? 'circle' : 'cross',
+            });
+          }
         }),
-        tap(() =>
-          this.activePlayer.next(
-            this.activePlayer.value === 'cross' ? 'circle' : 'cross'
-          )
-        ),
         take(1)
       )
       .subscribe();
   }
 
   reload() {
-    this.gameActive.next(true);
-    this.updateRound();
-    this.startWithCross = !this.startWithCross;
-    this.activePlayer.next(this.togglePlayer());
-    this.gameBoard.next(new Array(9).fill(Math.random(), 0, 9));
-    this.games$$.next(new ReplaySubject<move>());
+    this.gameData$
+      .pipe(
+        tap(({ round, winner }) => {
+          updateDoc(doc(this.firestore, 'game', 'testGame'), {
+            board: new Array(9).fill(null, 0, 9),
+            player: winner === 'cross' ? 'circle' : 'cross',
+            round: ++round,
+            active: true,
+          });
+        }),
+        take(1)
+      )
+      .subscribe();
   }
 
-  private findWinner(moves: move[], player: string) {
-    if (this.checkPattern(moves, player)) {
-      this.updateScore(player);
-    } else if (moves.length === 9) {
-      this.updateScore('');
-    }
-  }
-
-  private getGameStatus(): Observable<boolean> {
-    return this.gameActive.asObservable();
-  }
-
-  private getScore(player: string): Observable<number> {
-    return this.score.asObservable().pipe(map((score) => score[player]));
-  }
-
-  private getWinner(): Observable<string> {
-    return this.winner.asObservable();
-  }
-
-  private filterPlayer(value: string, moves: move[]) {
+  private filterPlayer(value: string, moves: any[]) {
     return moves
-      .map(({ field, player }) => (player === value ? field + 1 : null))
+      .map((move, i) => (move === value ? i + 1 : null))
       .filter((el) => el);
   }
 
-  private updateScore(player: string) {
-    if (player) {
-      const score = { ...this.score.value };
-      ++score[player];
-      this.score.next(score);
-    }
-    this.winner.next(player);
-    this.gameActive.next(false);
-  }
-
-  private updateRound() {
-    let round = this.round.value;
-    this.round.next(++round);
-  }
-
-  private togglePlayer(): string {
-    return this.startWithCross ? 'cross' : 'circle';
-  }
-
-  private checkPattern(moves: move[], player: string) {
+  private checkPattern(moves: any[], player: string) {
     return this.patterns.some((pattern) =>
       pattern.every((number) =>
         this.filterPlayer(player, moves).includes(number)
@@ -197,7 +131,37 @@ export class GameControlService {
     );
   }
 
-  private returnPlayer(moves: move[], field: number) {
-    return moves.find((move) => move.field === field)!.player;
+  private findWinner(moves: any[], player: string) {
+    if (this.checkPattern(moves, player)) {
+      this.gameData$
+        .pipe(
+          tap(({ score }) => {
+            const s = score;
+            ++s[player];
+            updateDoc(doc(this.firestore, 'game', 'testGame'), {
+              winner: player,
+              score: s,
+              active: false,
+            });
+          }),
+          take(1)
+        )
+        .subscribe();
+    } else if (moves.filter((el) => !el).length === 0) {
+      updateDoc(doc(this.firestore, 'game', 'testGame'), { winner: '' });
+    }
+  }
+
+  private gameInitData() {
+    this.gameData$ = collectionData(collection(this.firestore, 'game')).pipe(
+      map(([{ board, player, score, winner, round, active }]) => ({
+        board,
+        player,
+        score,
+        winner,
+        round,
+        active,
+      }))
+    );
   }
 }

@@ -10,14 +10,3 @@
 .card:hover {
   cursor: pointer;
 }
-@keyframes flip {
-  from {
-    transform: scale(0.5);
-  }
-  to {
-    transform: rotateY(180deg);
-  }
-}
-.flip {
-  animation: flip 250ms ease-in;
-}
