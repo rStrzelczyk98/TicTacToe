@@ -1,6 +1,7 @@
 <div class="d-flex flex-wrap justify-content-between mt-4" *ngIf="gameStatus$ | async as gameStatus">
   <div
     class="player position-relative p-2 bg-primary-subtle text-center text-primary rounded-end border border-2 border-primary border-start-0">
+    <p class="m-0 mx-auto fw-bold longName text-center">{{gameStatus.circle | titlecase}}</p>
     <i class="bi bi-circle"></i>
     <p class="m-0 fw-bold">{{gameStatus.score['circle']}}</p>
     <app-winner [player]="'circle'" *ngIf="gameStatus.winner === 'circle'"></app-winner>
@@ -10,6 +11,7 @@
   </p>
   <div
     class="player position-relative p-2 bg-danger-subtle text-center text-danger rounded-start border border-2 border-danger border-end-0">
+    <p class="m-0 mx-auto fw-bold longName text-center">{{gameStatus.cross | titlecase}}</p>
     <i class="bi bi-x-lg"></i>
     <p class="m-0 fw-bold">{{gameStatus.score['cross']}}</p>
     <app-winner [player]="'cross'" *ngIf="gameStatus.winner === 'cross'"></app-winner>

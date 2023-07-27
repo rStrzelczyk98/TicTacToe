@@ -1,10 +1,6 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  GameControlService,
-  Status,
-  gameData,
-} from '../service/game-control.service';
+import { GameControlService, gameData } from '../service/game-control.service';
 
 @Component({
   selector: 'app-score',
