@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
-import { GameControlService, gameData } from '../service/game-control.service';
+import { GameControlService } from '../service/game-control.service';
+import { gameData } from '../service/firebase.service';
 
 @Component({
   selector: 'app-score',

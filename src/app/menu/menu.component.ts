@@ -16,12 +16,12 @@ export class MenuComponent {
   }
 
   createGame() {
-    this.gs.createNewGame(this.username('host#'));
+    this.gs.createGame(this.username('host#'));
     this.navigate('game');
   }
 
   joinGame(id: string) {
-    this.gs.joinNewGame(this.username('guest#'), id);
+    this.gs.joinGame(this.username('guest#'), id);
     this.navigate('game');
   }
 

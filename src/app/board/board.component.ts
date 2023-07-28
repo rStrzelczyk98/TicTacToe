@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { Observable, map } from 'rxjs';
-import { GameControlService, gameData } from '../service/game-control.service';
+import { Observable } from 'rxjs';
+import { GameControlService } from '../service/game-control.service';
+import { Moves } from '../service/firebase.service';
 
 @Component({
   selector: 'app-board',
@@ -8,7 +9,7 @@ import { GameControlService, gameData } from '../service/game-control.service';
   styleUrls: ['./board.component.scss'],
 })
 export class BoardComponent {
-  gameBoard$: Observable<(string | null)[]>;
+  gameBoard$: Observable<Moves>;
 
   constructor(private gameControl: GameControlService) {
     this.gameBoard$ = this.gameControl.getBoard();
