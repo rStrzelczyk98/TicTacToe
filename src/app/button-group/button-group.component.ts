@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { GameControlService, Status } from '../service/game-control.service';
-import { Observable, map } from 'rxjs';
+import { GameControlService } from '../service/game-control.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-button-group',
@@ -9,13 +9,12 @@ import { Observable, map } from 'rxjs';
 })
 export class ButtonGroupComponent {
   gameStatus$!: Observable<boolean>;
-  constructor(private gameService: GameControlService) {
-    this.gameStatus$ = this.gameService
-      .getGameStats()
-      .pipe(map((status) => status.active));
-  }
+  constructor(private gameService: GameControlService) {}
 
   reset() {
     this.gameService.reload();
+  }
+  exit() {
+    this.gameService.deleteGame();
   }
 }
